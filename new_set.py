@@ -5,6 +5,7 @@ import json
 from Qt.QtWidgets import QMainWindow, QMenu
 from Qt.QtGui import QColor
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQWidgetBaseMixin, MayaQDockWidget
+import logging
 
 ROOT  = str(os.path.dirname(__file__))
 
@@ -84,17 +85,21 @@ class CustomSet(QtWidgets.QWidget):
         self.mainLayout = QtWidgets.QHBoxLayout()  # layout for custom widget
         self.setLayout(self.mainLayout)            # setting mainLayout as layout for widget
 
-        self.visButton = QtWidgets.QPushButton()   # visibility "Eye" button
-        self.visButton.setFixedSize(18,18)         # visibility button size 
+        self.visButton = QtWidgets.QPushButton()     # visibility "Eye" button
+        self.visButton.setFixedSize(16,16)         # visibility button size 
         self.mainLayout.addWidget(self.visButton)  # adding visibility button to mainLayout
 
         self.eyeicon_1 = QtGui.QIcon(os.path.join(ROOT, "icons", "vis.svg"))
         self.eyeicon_2 = QtGui.QIcon(os.path.join(ROOT, "icons", "invis.svg"))
-        self.visButton.setIcon(self.eyeicon_1) # icon for visibility Button                      
+        self.visButton.setFlat(True)
+        self.visButton.setStyleSheet("QPushButton:checked{background-color: transparent; color: black; border: black 2px; }"
+                                     "QPushButton:pressed{background-color: transparent; color: black; border: black 2px; }")                      
+        self.visButton.setIcon(self.eyeicon_1)    
         self.visButton.setIconSize(QtCore.QSize(16,16))  # icon size for visibility button
-        self.visButton.setFlat(True)               # setting button flat and transparent
+        self.visButton.toggle()
+        self.visButton.setCheckable(True)
         
-        self.visButton.clicked.connect(self.eyeChanged)
+        self.visButton.clicked.connect(self.hide_Layer)
 
         self.colorSwatch = ColorCube()              # Adding color cube class to main layout 
         self.mainLayout.addWidget(self.colorSwatch)
@@ -110,11 +115,14 @@ class CustomSet(QtWidgets.QWidget):
         self.selButton.setMinimumWidth(50)
         self.selButton.setMaximumWidth(50)
  
-    def eyeChanged():
-        if self.visButton.QIcon() == self.eyeicon_1:
+    def hide_Layer(self):
+        
+        if self.visButton.isChecked():
             self.visButton.setIcon(self.eyeicon_2)
-        elif self.visButton.QIcon() == self.eyeicon_2:
-            self.visButton.setIcon(self.eyeicon_1)        
+            logging.info("Layer Hidden")
+        else:
+            self.visButton.setIcon(self.eyeicon_1)    
+          
     
     
     def contextMenuEvent(self, event):      # creating right click context menu on selection set

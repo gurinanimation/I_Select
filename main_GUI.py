@@ -8,6 +8,7 @@ from Qt.QtWidgets import QMainWindow, QMenu
 
 import logging
 from new_set import*
+from group import*
 
 ROOT  = str(os.path.dirname(__file__))
 
@@ -121,6 +122,8 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
 
     def new_group_button_clicked(self):
         logging.info("New Group has been created")
+        Group = NewGroup()
+        self.scroll_layout.addWidget(Group)
 
     def open_saved_set(self):
         logging.info("Set has been opened")

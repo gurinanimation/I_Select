@@ -7,8 +7,8 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQWidgetBase
 from Qt.QtWidgets import QMainWindow, QMenu
 
 import logging
-from new_set import*
-from group import*
+import new_set as ns
+import group as ng
 
 ROOT  = str(os.path.dirname(__file__))
 
@@ -21,6 +21,12 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
 
         super (I_Select_GUI, self).__init__()
 
+        self.counter = 0                            # counter variable for new set suffix
+        self.group_label_name = "Group_"            # variable - new group prefix
+        self.set_label_name = "Set_"                # variable - new set prefix
+        self.dropName = "Drop_Group_" 
+        
+        ###########################################################################
         self.setMinimumSize(320, 400)                # Widget size
         self.setObjectName('GUI_object')             # widget's object name
         self.setWindowTitle("I Select")              # main window title
@@ -101,10 +107,8 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
 
         self.gui_layout.addWidget(self.scrollArea)           # adding scroll area to main gui widget
 
-
         ###########################################
         ### connecting GUI buttons to functions ###
-        ###########################################
 
         self.setButton.clicked.connect(self.new_set_button_clicked)
         self.groupButton.clicked.connect(self.new_group_button_clicked)
@@ -113,23 +117,41 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
 
     ##############################################
     ### functions related to GUI Buttons #########
-    ##############################################
     
-    def new_set_button_clicked(self):
-        logging.info("New Selection Set has been created")
-        NewSet = CustomSet()
+    # function to add new sets to scroll_layout
+    def new_set_button_clicked(self):                      
+        logging.info("New Selection Set has been created")        
+        self.counter += 1
+        NewSet = ns.CustomSet(labelName = self.set_label_name + str(self.counter))
         self.scroll_layout.addWidget(NewSet)
+        NewSet.deleteScrollPressed.connect(self.delete_selected_widget)
 
+    # function to add new groups to scroll_layout
     def new_group_button_clicked(self):
         logging.info("New Group has been created")
-        Group = NewGroup()
+        self.counter += 1
+        Group = ng.NewGroup(labelName = self.group_label_name + str(self.counter)) 
+                                 
         self.scroll_layout.addWidget(Group)
+        Group.deletePressed.connect(self.delete_selected_widget)
+          
+    # function to delete groups/sets from scroll_layout
+    def delete_selected_widget(self, labelName = None ):
+        if not labelName:
+            return
+
+        elif self.scroll_layout.count() > 0:
+            for i in range(0, self.scroll_layout.count()):
+                item = self.scroll_layout.itemAt(i)
+                itemWidget = item.widget()
+                if itemWidget.labelName == labelName:
+                    itemWidget.deleteLater()                
 
     def open_saved_set(self):
         logging.info("Set has been opened")
 
     def save_created_set(self):
-        logging.info("Your set has been saved")            
+        logging.info("Your set has been saved") 
 
 
 # deleting GUI interface before opening new

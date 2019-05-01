@@ -12,7 +12,6 @@ import group as ng
 
 ROOT  = str(os.path.dirname(__file__))
 
-
 class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
 
     ### Defining our QT widget workspace and icons ###
@@ -24,8 +23,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
         self.counter = 0                            # counter variable for new set suffix
         self.group_label_name = "Group_"            # variable - new group prefix
         self.set_label_name = "Set_"                # variable - new set prefix
-        self.dropName = "Drop_Group_" 
-        
+                
         ###########################################################################
         self.setMinimumSize(320, 400)                # Widget size
         self.setObjectName('GUI_object')             # widget's object name
@@ -57,7 +55,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
         self.saveButton.setIcon(QtGui.QIcon
                                (os.path.join
                                (ROOT, "icons", "save.svg")))
-        self.saveButton.setIconSize(QtCore.QSize(32,32))
+        self.saveButton.setIconSize(QtCore.QSize(32, 32))
 
         self.groupButton = QtWidgets.QPushButton()   # new group button
         self.groupButton.setFixedSize(32,32)
@@ -115,6 +113,9 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
         self.openButton.clicked.connect(self.open_saved_set)
         self.saveButton.clicked.connect(self.save_created_set)
 
+        ### accepting drops for drag and drop ###
+        self.setAcceptDrops(True)
+
     ##############################################
     ### functions related to GUI Buttons #########
     
@@ -130,8 +131,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
     def new_group_button_clicked(self):
         logging.info("New Group has been created")
         self.counter += 1
-        Group = ng.NewGroup(labelName = self.group_label_name + str(self.counter)) 
-                                 
+        Group = ng.NewGroup(labelName = self.group_label_name + str(self.counter))                                  
         self.scroll_layout.addWidget(Group)
         Group.deletePressed.connect(self.delete_selected_widget)
           
@@ -153,7 +153,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
     def save_created_set(self):
         logging.info("Your set has been saved") 
 
-
+    
 # deleting GUI interface before opening new
 def deleteGUI(control):
 

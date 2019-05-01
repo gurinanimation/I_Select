@@ -8,16 +8,16 @@ from Qt.QtWidgets import QMainWindow, QMenu
 from Qt.QtGui import QColor
 
 import logging
+import new_set as ns
 
 ROOT  = str(os.path.dirname(__file__))
 
 class DropGroup(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, label = None):
         super(DropGroup,self).__init__()
-       
+        self.FixHeight = 45
         ###########################
-        self.setMinimumHeight(45)
-        self.setMaximumHeight(45)
+        self.setFixedHeight(self.FixHeight)
         self.setObjectName("Drop_group_obj")
         self.drop_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.drop_layout) 
@@ -28,6 +28,35 @@ class DropGroup(QtWidgets.QWidget):
         self.p.setColor(self.backgroundRole(), QtGui.QColor(self.bgcolor,self.bgcolor,self.bgcolor))
         self.setPalette(self.p)
 
+        ### drag and Drop ###
+        self.setAcceptDrops(True)
+
+    #### drag and drop functions ###
+    def addObjects(self, widget = None):
+        
+        self.FixHeight += 45
+        self.setFixedHeight(self.FixHeight)
+
+        self.drop_layout.addWidget(widget)
+        self.repaint()
+        self.update()
+            
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()
+    
+    def dropEvent(self, event):
+        name = event.mimeData().getSomeText()
+        objList = event.mimeData().getSomeSetList()
+        
+        widget = ns.CustomSet(labelName = name)
+        widget.stored_selection = objList
+
+        # functions #
+        self.addObjects(widget = widget)
+
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+
 
 class Label(QtWidgets.QWidget):
     def __init__(self, name = None):
@@ -35,18 +64,17 @@ class Label(QtWidgets.QWidget):
         super(Label, self).__init__()
         self.name = name
         
-        self.setMinimumWidth(100)                       # setting label class sizes
-        self.setMinimumHeight(16)
+        self.setFixedHeight(16)                       # setting label class sizes
         self.setObjectName("Label_class")               # setting object name 
         
+        # label
         self.labelLayout = QtWidgets.QHBoxLayout()      # setting layout for label widget
         self.labelLayout.setContentsMargins(0,0,0,0)    # setting contents margins for layout
         self.setLayout(self.labelLayout)
         
         self.setLabel = QtWidgets.QLabel()            # setting label for set
         self.labelLayout.addWidget(self.setLabel)     # adding setLabel to main layout
-        self.font = QtGui.QFont("Arial", 10)          # setting font for label
-        self.setLabel.setFont(self.font)              # assigning this font to label
+
         self.setLabel.setText(self.name)
 
         self.changeLabel = QtWidgets.QLineEdit()          # setting hidden line edit to change set name 
@@ -87,16 +115,18 @@ class NewGroup(QtWidgets.QWidget):
         self.mainLayout = QtWidgets.QVBoxLayout()
         self.setLayout(self.mainLayout)
         self.setObjectName("New_Group")
-        self.setMinimumHeight(45 + self.drop.height())    
+        self.setMinimumHeight(30 + self.drop.height())
+            
         self.mainLayout.setSpacing(10)
         self.mainLayout.setContentsMargins(1,1,1,1)
         
         # group and layout for label and open/close button
         self.label_group = QtWidgets.QGroupBox()
         self.group_layout = QtWidgets.QHBoxLayout()
+        self.group_layout.setContentsMargins(0,0,0,0)
 
         self.label_group.setLayout(self.group_layout)
-        self.label_group.setFixedSize(310,45)
+        self.label_group.setFixedHeight(25)
         
         self.mainLayout.addWidget(self.label_group)
         self.mainLayout.setAlignment(self.label_group, QtCore.Qt.AlignTop)
@@ -124,18 +154,13 @@ class NewGroup(QtWidgets.QWidget):
         self.font = QtGui.QFont("Arial", 10)
         self.groupName.setFont(self.font)
 
-        # color
-        self.bgcolor = 75
-        self.setAutoFillBackground(True)
-        self.p = self.palette()
-        self.p.setColor(self.backgroundRole(), QtGui.QColor(self.bgcolor,self.bgcolor,self.bgcolor))
-        self.setPalette(self.p)
-
         ### adding drop group to self.mainLayout  ###
         self.mainLayout.addWidget(self.drop)
 
         ## connect to functions ##
         self.smallBox.clicked.connect(self.open_close_group)
+
+        self.setAutoFillBackground(True)
       
     ### function to change icon on open close group ###
     def open_close_group(self):

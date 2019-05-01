@@ -7,13 +7,35 @@ from Qt.QtGui import QColor
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQWidgetBaseMixin, MayaQDockWidget
 import logging
 
-ROOT  = str(os.path.dirname(__file__))
+ROOT = str(os.path.dirname(__file__))
+
+
+class MyMIME(QtCore.QMimeData):
+    ### this class keeps all the data transfered via drag and drop ###
+    def __init__(self):
+        super(MyMIME, self).__init__()
+        
+    def setSomeText(self, text = None):
+        self.someText = text
+    
+    def getSomeText(self):
+        return self.someText 
+
+    def setSomeSetList(self, setList = None):
+        self.someSetList = setList
+
+    def getSomeSetList(self):
+        return self.someSetList       
+
 
 class Label(QtWidgets.QWidget):
+    # this class keeps label name for the set
+    emitChangeLabel = QtCore.Signal(str)
+    
     def __init__(self, name = None):
 
         super(Label, self).__init__()
-        self.name = name
+        self.internalName = name
         
         self.setMinimumWidth(100)                       # setting label class sizes
         self.setMinimumHeight(16)
@@ -27,7 +49,7 @@ class Label(QtWidgets.QWidget):
         self.labelLayout.addWidget(self.setLabel)     # adding setLabel to main layout
         self.font = QtGui.QFont("Arial", 10)          # setting font for label
         self.setLabel.setFont(self.font)              # assigning this font to label
-        self.setLabel.setText(self.name)
+        self.setLabel.setText(self.internalName)
 
         self.changeLabel = QtWidgets.QLineEdit()          # setting hidden line edit to change set name 
         self.labelLayout.addWidget(self.changeLabel)       # adding line adit to main layout 
@@ -35,21 +57,25 @@ class Label(QtWidgets.QWidget):
         self.changeLabel.textChanged.connect(self.changeText)  # connecting to function to change text
         self.changeLabel.returnPressed.connect(self.setLabel_visibility) # connecting to function line edit visibility
         self.changeLabel.editingFinished.connect(self.changeFocus) # connecting to change focus function
-
+    
     def mouseDoubleClickEvent(self, event): # Event to hide label and show line edit
         self.setLabel.hide()
         self.changeLabel.show()
     
     def changeText(self, text):             #function to change text in setLabel
-        self.setLabel.setText(text)     
-         
+        self.setLabel.setText(text)
+        self.internalName = text       
+    
     def setLabel_visibility(self):          # function to change setLabel visibility
         self.setLabel.show()     
-        self.changeLabel.hide()       
+        self.changeLabel.hide()
+        print(self.internalName)       
+        self.emitChangeLabel.emit(str(self.internalName)) 
+    
     def changeFocus(self):                  # change focus function to remove focus from changeLabel line edit
-        self.setLabel.setFocus() 
-
-
+        self.changeLabel.clearFocus()
+        
+    
 class ColorCube(QtWidgets.QWidget):
 
     ### creating color swatch cube ###
@@ -81,6 +107,7 @@ class CustomSet(QtWidgets.QWidget):
 
     def __init__(self, labelName = None):
         super (CustomSet, self).__init__()
+        
         self.labelName = labelName
 
         self.setMinimumWidth(310)                 # size for custom widget
@@ -113,6 +140,7 @@ class CustomSet(QtWidgets.QWidget):
         self.mainLayout.addWidget(self.colorSwatch)
 
         self.label = Label(name = self.labelName)                        # adding label class to mainLayout
+        self.label.emitChangeLabel.connect(self.changeLabelName)
         self.mainLayout.addWidget(self.label)
 
 
@@ -126,7 +154,13 @@ class CustomSet(QtWidgets.QWidget):
 
         #### list for keeping objects in set ####
         self.stored_selection = []
-        
+    
+    ### changing mainLable ###
+    @QtCore.Slot(str)
+    def changeLabelName(self, text):
+        self.labelName = text
+        print("New label name is: " + self.labelName)   
+    
     ### function to hide/open layers eye
     def hideLayer(self):
         self.shapes = []
@@ -143,7 +177,8 @@ class CustomSet(QtWidgets.QWidget):
                 cmds.select(i)
                 self.shapes.extend(cmds.listRelatives(c = True, s = True))
                 for i in self.shapes:
-                    cmds.setAttr("%s.visibility" % i, 1) 
+                    cmds.setAttr("%s.visibility" % i, 1)
+        cmds.select(cl = True)             
             
     ### function to add objects to list ###
     def adding_to_set_function(self):
@@ -209,6 +244,38 @@ class CustomSet(QtWidgets.QWidget):
 
         if action == delAct:
             self.delete_from_scroll()
+
+    ###### Drag and Drop section ######
+        
+    def mouseMoveEvent(self, event):
+        
+        if event.buttons() != QtCore.Qt.LeftButton:
+            return
+        
+        mimeData = MyMIME()                        # setting MimeData
+        mimeData.setSomeText(text = self.labelName)
+        mimeData.setSomeSetList(setList = self.stored_selection)
+        
+        # below makes the pixmap half transparent
+        pixmap = QtGui.QPixmap.grabWidget(self)
+        painter = QtGui.QPainter(pixmap)
+        painter.setCompositionMode(painter.CompositionMode_DestinationIn)
+        painter.fillRect(pixmap.rect(), QtGui.QColor(0, 0, 0, 127))
+        painter.end()
+    
+        # make a QDrag
+        drag = QtGui.QDrag(self)
+        # put our MimeData
+        drag.setMimeData(mimeData)
+        # set its Pixmap
+        drag.setPixmap(pixmap)
+        # shift the Pixmap so that it coincides with the cursor position
+        drag.setHotSpot(event.pos())
+    
+        drag.exec_(QtCore.Qt.CopyAction | QtCore.Qt.MoveAction, QtCore.Qt.MoveAction)
+        
+
+
 
 
 

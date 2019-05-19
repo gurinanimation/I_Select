@@ -146,13 +146,127 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
                 itemWidget = item.widget()
                 if itemWidget.labelName == labelName:
                     itemWidget.deleteLater()                
-
+    
+    # function to open saved json set
     def open_saved_set(self):
+        
+        # open json file
+
+        # reading dictionaries from json
+
+        # creating groups and sets based on json dictionaries
+        
         logging.info("Set has been opened")
+    
+    # function to save set into json file
+    def save_created_set(self, fileName = None):
+        self.data = {"sets": []}
+         
+        # getting dictionaries from layouts and groups with sets
+        for i in range(0, self.scroll_layout.count()):
+            item = self.scroll_layout.itemAt(i)
+            widget = item.widget()
+            x = str(widget)
+             
+            if "CustomSet" in x:
+                setDict = {"Name": None, "Color": None, "Objects": None}
+                
+                name = widget.labelName
+                color = widget.color_for_cube
+                objects = widget.stored_selection
 
-    def save_created_set(self):
-        logging.info("Your set has been saved") 
+                setDict["Name"] = name
+                #setDict["Color"] = color
+                setDict["Objects"] = objects
 
+                self.data["sets"].append(setDict)
+
+            if "NewGroup" in x:
+
+                for i in range(0, widget.drop.drop_layout.count()):
+
+                    groupDict = {"Group": None, "Name": None, "Color": None, "Objects": None}
+                    
+                    groupItem = widget.drop.drop_layout.itemAt(i)
+                    groupWidget = groupItem.widget()
+
+                    groupName = widget.labelName
+                    groupWidgetName = groupWidget.labelName
+                    groupWidgetColor = groupWidget.color_for_cube
+                    groupWidgetObjects = groupWidget.stored_selection
+
+                    groupDict["Group"] = groupName
+                    groupDict["Name"] = groupWidgetName
+                    #groupDict["Color"] = groupWidgetColor
+                    groupDict["Objects"] = groupWidgetObjects 
+
+                    self.data["sets"].append(groupDict)
+
+                    
+        # saving dictionaries to json file
+        if not fileName:
+            retval = cmds.fileDialog2(dialogStyle = 2, fm = 0)
+            if retval:
+                file, ext = os.path.splitext(retval[0])
+                if ext != "*.json":
+                    fileName = file + ".json"
+                else:
+                    fileName = retval[0]
+        
+        print(fileName)
+
+        fileOut = open(fileName, "w")
+        json.dump(self.data, fileOut, indent = 2)
+        fileOut.close()         
+
+        logging.info("Your set has been saved")
+        
+    
+    
+    #### drag and drop functions ###
+
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        name = event.mimeData().getSomeText()
+        objList = event.mimeData().getSomeSetList()
+        parentLayout = event.mimeData().getSomeLayout()
+        palette = event.mimeData().getSomeColor() 
+        print(palette )
+        widget = ns.CustomSet(labelName = name, color = palette)
+    
+        widget.stored_selection = objList
+        widget.deleteScrollPressed.connect(self.delete_selected_widget)
+
+        # functions #
+        self.addObjects(widget = widget, labelName = name, layout = parentLayout)
+
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+
+    def addObjects(self, widget = None, labelName = None, layout = None):
+        
+        if self.scroll_layout.count() > 0:
+            for i in range(0, self.scroll_layout.count()):
+                item = self.scroll_layout.itemAt(i)
+                itemWidget = item.widget()
+                if itemWidget.labelName == labelName:
+                    return
+        
+        self.scroll_layout.addWidget(widget)
+
+        if layout.count() > 0:
+            for i in range(0, layout.count()):
+                item = layout.itemAt(i)
+                widget = item.widget()
+                pw = layout.parentWidget()
+                height = pw.height()
+                if widget.labelName == labelName:
+                    widget.deleteLater()
+                    
+                    if hasattr(pw, "DropSize"):
+                        pw.setFixedHeight(height - 45)           
     
 # deleting GUI interface before opening new
 def deleteGUI(control):

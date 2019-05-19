@@ -13,11 +13,11 @@ import new_set as ns
 ROOT  = str(os.path.dirname(__file__))
 
 class DropGroup(QtWidgets.QWidget):
-    def __init__(self, label = None):
+    def __init__(self, DropSize = 45, label = None):
         super(DropGroup,self).__init__()
-        self.FixHeight = 45
+        self.DropSize = DropSize
         ###########################
-        self.setFixedHeight(self.FixHeight)
+        self.setFixedHeight(self.DropSize)
         self.setObjectName("Drop_group_obj")
         self.drop_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.drop_layout) 
@@ -32,14 +32,31 @@ class DropGroup(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
     #### drag and drop functions ###
-    def addObjects(self, widget = None):
+    def addObjects(self, widget = None, labelName = None, layout = None):
         
-        self.FixHeight += 45
-        self.setFixedHeight(self.FixHeight)
-
+        if self.drop_layout.count() > 0:
+            for i in range(0, self.drop_layout.count()):
+                item = self.drop_layout.itemAt(i)
+                itemWidget = item.widget()
+                if itemWidget.labelName == labelName:
+                    return
+        
+        self.setFixedHeight(self.height() + 45)
         self.drop_layout.addWidget(widget)
         self.repaint()
         self.update()
+
+        if layout.count() > 0:
+            for i in range(0, layout.count()):
+                item = layout.itemAt(i)
+                widget = item.widget()
+                pw = layout.parentWidget()
+                height = pw.height()
+                if widget.labelName == labelName:
+                    widget.deleteLater()
+                    
+                    if hasattr(pw, "DropSize"):
+                        pw.setFixedHeight(height - 45)   
             
     def dragEnterEvent(self, event):
         event.acceptProposedAction()
@@ -47,18 +64,38 @@ class DropGroup(QtWidgets.QWidget):
     def dropEvent(self, event):
         name = event.mimeData().getSomeText()
         objList = event.mimeData().getSomeSetList()
-        
-        widget = ns.CustomSet(labelName = name)
+        parentLayout = event.mimeData().getSomeLayout()
+        palette = event.mimeData().getSomeColor() 
+        print(palette )
+        widget = ns.CustomSet(labelName = name, color = palette)
+    
         widget.stored_selection = objList
+        widget.deleteScrollPressed.connect(self.delete_selected_widget)
 
         # functions #
-        self.addObjects(widget = widget)
+        self.addObjects(widget = widget, labelName = name, layout = parentLayout)
+        
 
     def dragMoveEvent(self, event):
         event.acceptProposedAction()
 
+    def delete_selected_widget(self, labelName = None):
+        if not labelName:
+            return
 
+        elif self.drop_layout.count() > 0:
+            for i in range(0, self.drop_layout.count()):
+                item = self.drop_layout.itemAt(i)
+                itemWidget = item.widget()
+                if itemWidget.labelName == labelName:
+                    itemWidget.deleteLater()
+                    self.setFixedHeight(self.height() - 45)
+
+                     
 class Label(QtWidgets.QWidget):
+    
+    emitChangeLabel = QtCore.Signal(str)
+    
     def __init__(self, name = None):
 
         super(Label, self).__init__()
@@ -89,11 +126,14 @@ class Label(QtWidgets.QWidget):
         self.changeLabel.show()
     
     def changeText(self, text):             #function to change text in setLabel
-        self.setLabel.setText(text)     
+        self.setLabel.setText(text)
+        self.name = text     
          
     def setLabel_visibility(self):          # function to change setLabel visibility
         self.setLabel.show()     
-        self.changeLabel.hide()       
+        self.changeLabel.hide()
+        self.emitChangeLabel.emit(str(self.name))       
+    
     def changeFocus(self):                  # change focus function to remove focus from changeLabel line edit
         self.setLabel.setFocus() 
 
@@ -150,6 +190,7 @@ class NewGroup(QtWidgets.QWidget):
 
         #setting group label
         self.groupName = Label(name = self.labelName)
+        self.groupName.emitChangeLabel.connect(self.changeLabelName)
         self.group_layout.addWidget(self.groupName)
         self.font = QtGui.QFont("Arial", 10)
         self.groupName.setFont(self.font)
@@ -186,6 +227,13 @@ class NewGroup(QtWidgets.QWidget):
 
     def delete_from_set(self):
         self.deletePressed.emit(self.labelName)
+
+    ### function to change label name ###
+    
+    @QtCore.Slot(str)
+    def changeLabelName(self, text):
+        self.labelName = text
+
     
 
 

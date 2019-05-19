@@ -25,7 +25,19 @@ class MyMIME(QtCore.QMimeData):
         self.someSetList = setList
 
     def getSomeSetList(self):
-        return self.someSetList       
+        return self.someSetList 
+
+    def setSomeLayout(self, layout = None):
+        self.someLayout = layout     
+    
+    def getSomeLayout(self):
+        return self.someLayout
+
+    def setSomeColor(self, color = None):
+        self.someColor = color
+
+    def getSomeColor(self):
+        return self.someColor        
 
 
 class Label(QtWidgets.QWidget):
@@ -77,19 +89,19 @@ class Label(QtWidgets.QWidget):
         
     
 class ColorCube(QtWidgets.QWidget):
-
+    
+    sendColor = QtCore.Signal(list)
     ### creating color swatch cube ###
     
-    def __init__(self):
+    def __init__(self, color = None):
 
         super(ColorCube, self).__init__()
-        
         self.setFixedSize(16, 16)              # size for color cube
          
-        self.bgcolor = 150                     # Setting color swatch cube color 
+        self.bgcolor = color                    # Setting color swatch cube color 
         self.setAutoFillBackground(True)
         self.p = self.palette()
-        self.p.setColor(self.backgroundRole(), QtGui.QColor(self.bgcolor, self.bgcolor, self.bgcolor))
+        self.p.setColor(self.backgroundRole(), QtGui.QColor(self.bgcolor))
         self.setPalette(self.p)
         self.setObjectName("Color_cube") 
 
@@ -97,7 +109,10 @@ class ColorCube(QtWidgets.QWidget):
         self.color = QtWidgets.QColorDialog.getColor()
         self.p = self.palette()
         self.p.setColor(self.backgroundRole(), QtGui.QColor(self.color.red(), self.color.green(), self.color.blue()))
-        self.setPalette(self.p)    
+        self.setPalette(self.p)
+        print(self.p.color(QtGui.QPalette.Background))
+
+        self.sendColor.emit(self.p.color(QtGui.QPalette.Background))    
 
 
 class CustomSet(QtWidgets.QWidget):
@@ -105,10 +120,11 @@ class CustomSet(QtWidgets.QWidget):
     ### custom selection set ###
     deleteScrollPressed = QtCore.Signal(str)
 
-    def __init__(self, labelName = None):
+    def __init__(self, labelName = None, color = QtGui.QColor(150, 150, 150, 255)):
         super (CustomSet, self).__init__()
         
         self.labelName = labelName
+        self.color_for_cube = color
 
         self.setMinimumWidth(310)                 # size for custom widget
         self.setMinimumHeight(45)
@@ -136,10 +152,11 @@ class CustomSet(QtWidgets.QWidget):
         
         self.visButton.clicked.connect(self.hideLayer)
 
-        self.colorSwatch = ColorCube()              # Adding color cube class to main layout 
+        self.colorSwatch = ColorCube(color = self.color_for_cube)  # Adding color cube class to main layout
+        self.colorSwatch.sendColor.connect(self.pallete_change) 
         self.mainLayout.addWidget(self.colorSwatch)
 
-        self.label = Label(name = self.labelName)                        # adding label class to mainLayout
+        self.label = Label(name = self.labelName)                   # adding label class to mainLayout
         self.label.emitChangeLabel.connect(self.changeLabelName)
         self.mainLayout.addWidget(self.label)
 
@@ -154,12 +171,16 @@ class CustomSet(QtWidgets.QWidget):
 
         #### list for keeping objects in set ####
         self.stored_selection = []
-    
+        self.stored_palette = None
     ### changing mainLable ###
     @QtCore.Slot(str)
     def changeLabelName(self, text):
         self.labelName = text
-        print("New label name is: " + self.labelName)   
+        print("New label name is: " + self.labelName)
+
+    @QtCore.Slot(list)
+    def pallete_change(self, palette = None):
+        self.color_for_cube = palette
     
     ### function to hide/open layers eye
     def hideLayer(self):
@@ -251,10 +272,15 @@ class CustomSet(QtWidgets.QWidget):
         
         if event.buttons() != QtCore.Qt.LeftButton:
             return
+        pw = self.parentWidget()
+        layout = pw.layout()
         
-        mimeData = MyMIME()                        # setting MimeData
+        # setting MimeData
+        mimeData = MyMIME()       
         mimeData.setSomeText(text = self.labelName)
         mimeData.setSomeSetList(setList = self.stored_selection)
+        mimeData.setSomeLayout(layout = layout)
+        mimeData.setSomeColor(color = self.color_for_cube)
         
         # below makes the pixmap half transparent
         pixmap = QtGui.QPixmap.grabWidget(self)

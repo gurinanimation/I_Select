@@ -110,9 +110,8 @@ class ColorCube(QtWidgets.QWidget):
         self.p = self.palette()
         self.p.setColor(self.backgroundRole(), QtGui.QColor(self.color.red(), self.color.green(), self.color.blue()))
         self.setPalette(self.p)
-        print(self.p.color(QtGui.QPalette.Background))
-
-        self.sendColor.emit(self.p.color(QtGui.QPalette.Background))    
+        self.sendRBG = self.color.getRgb()
+        self.sendColor.emit(self.sendRBG)    
 
 
 class CustomSet(QtWidgets.QWidget):
@@ -120,11 +119,17 @@ class CustomSet(QtWidgets.QWidget):
     ### custom selection set ###
     deleteScrollPressed = QtCore.Signal(str)
 
-    def __init__(self, labelName = None, color = QtGui.QColor(150, 150, 150, 255)):
+    def __init__(self, labelName = None, color = [150, 150, 150, 255]):
         super (CustomSet, self).__init__()
         
+        self.saveColorJson = color
+
+        if isinstance(color, (list, tuple)):
+            self.color_for_cube = QtGui.QColor(*color)
+        elif isinstance(color, QtGui.QColor):
+            self.color_for_cube = color        
+                
         self.labelName = labelName
-        self.color_for_cube = color
 
         self.setMinimumWidth(310)                 # size for custom widget
         self.setMinimumHeight(45)
@@ -181,6 +186,7 @@ class CustomSet(QtWidgets.QWidget):
     @QtCore.Slot(list)
     def pallete_change(self, palette = None):
         self.color_for_cube = palette
+        self.saveColorJson = palette
     
     ### function to hide/open layers eye
     def hideLayer(self):
@@ -280,7 +286,7 @@ class CustomSet(QtWidgets.QWidget):
         mimeData.setSomeText(text = self.labelName)
         mimeData.setSomeSetList(setList = self.stored_selection)
         mimeData.setSomeLayout(layout = layout)
-        mimeData.setSomeColor(color = self.color_for_cube)
+        mimeData.setSomeColor(color = self.saveColorJson)
         
         # below makes the pixmap half transparent
         pixmap = QtGui.QPixmap.grabWidget(self)

@@ -2,6 +2,7 @@ from Qt import QtWidgets, QtCore, QtGui
 import maya.cmds as cmds
 import os
 import json
+import re
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQWidgetBaseMixin, MayaQDockWidget
 
 from Qt.QtWidgets import QMainWindow, QMenu
@@ -171,12 +172,19 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
             if "CustomSet" in x:
                 setDict = {"Name": None, "Color": None, "Objects": None}
                 
+                #getting widget's name
                 name = widget.labelName
-                color = widget.color_for_cube
+                
+                #getting widget's color
+                color = widget.saveColorJson
+                print(color)            
+                
+                #getting widget's objects stored in set
                 objects = widget.stored_selection
 
+                # adding all variables to temporary Dictionary
                 setDict["Name"] = name
-                #setDict["Color"] = color
+                setDict["Color"] = color
                 setDict["Objects"] = objects
 
                 self.data["sets"].append(setDict)
@@ -192,12 +200,12 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
 
                     groupName = widget.labelName
                     groupWidgetName = groupWidget.labelName
-                    groupWidgetColor = groupWidget.color_for_cube
+                    groupWidgetColor = groupWidget.saveColorJson
                     groupWidgetObjects = groupWidget.stored_selection
 
                     groupDict["Group"] = groupName
                     groupDict["Name"] = groupWidgetName
-                    #groupDict["Color"] = groupWidgetColor
+                    groupDict["Color"] = groupWidgetColor
                     groupDict["Objects"] = groupWidgetObjects 
 
                     self.data["sets"].append(groupDict)

@@ -66,7 +66,6 @@ class DropGroup(QtWidgets.QWidget):
         objList = event.mimeData().getSomeSetList()
         parentLayout = event.mimeData().getSomeLayout()
         palette = event.mimeData().getSomeColor() 
-        print(palette )
         widget = ns.CustomSet(labelName = name, color = palette)
     
         widget.stored_selection = objList

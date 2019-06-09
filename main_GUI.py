@@ -148,17 +148,88 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
                 if itemWidget.labelName == labelName:
                     itemWidget.deleteLater()                
     
-    # function to open saved json set
-    def open_saved_set(self):
+    #### functions to open saved json set ###
+    def add_group_from_json(self, group = None):
+        if self.scroll_layout.count() > 0:
+            for i in range(0, self.scroll_layout.count()):
+                item = self.scroll_layout.itemAt(i)
+                itemWidget = item.widget()
+                labelName = itemWidget.labelName
+                ImportedName = group.labelName               
+                if str(ImportedName) == str(labelName):
+                    return -1
+            
+        self.scroll_layout.addWidget(group) 
+
+    def add_set_from_json(self, selSet = None, layout = None):
+        
+        if layout == "scroll":
+            if self.scroll_layout.count() > 0:
+                for i in range(0, self.scroll_layout.count()):
+                    item = self.scroll_layout.itemAt(i)
+                    itemWidget = item.widget()
+                    if itemWidget == selSet:
+                        return
+            self.scroll_layout.addWidget(selSet)
+
+        else:
+            if self.scroll_layout.count() > 0:
+                for i in range(0, self.scroll_layout.count()):
+                    item = self.scroll_layout.itemAt(i)
+                    itemWidget = item.widget()
+                    GroupName = itemWidget.labelName
+                    
+                    if GroupName == layout:
+                        height = itemWidget.drop.height()
+                        itemWidget.drop.setFixedHeight(height + 45)
+                        groupLayout = itemWidget.drop.drop_layout
+                        groupLayout.addWidget(selSet)
+                        selSet.deleteScrollPressed.connect(itemWidget.drop.delete_selected_widget)
+
+                        
+                        
+    def open_saved_set(self, openName = None):
         
         # open json file
-
+        if not openName: 
+            basicFilter = "*.json"
+            returnData  = cmds.fileDialog2(dialogStyle = 2, fm = 1, ff = basicFilter)
+            openName = returnData[0]
+        
+        with open(openName, "r") as data:
+            sets = json.load(data)
+        
         # reading dictionaries from json
 
-        # creating groups and sets based on json dictionaries
-        
+        for i in sets["sets"]:
+            if "Group" in i:
+
+                groupName = i["Group"]
+                groupSetName = i["Name"]
+                groupSetColor = i["Color"]
+                groupSetObjects = i["Objects"]
+
+                Group = ng.NewGroup(labelName = groupName)
+                Group.deletePressed.connect(self.delete_selected_widget)
+                runGroup = self.add_group_from_json(group = Group)
+
+                widget = ns.CustomSet(labelName = groupSetName, color = groupSetColor)
+                widget.stored_selection = groupSetObjects
+                
+                runGroupSet = self.add_set_from_json(selSet = widget, layout = groupName)
+
+            else:
+                setName = i["Name"]
+                setColor = i["Color"]
+                setObjects = i["Objects"]
+                widget = ns.CustomSet(labelName = setName, color = setColor)
+                widget.stored_selection = setObjects
+                widget.deleteScrollPressed.connect(self.delete_selected_widget)
+                
+                runSet = self.add_set_from_json(selSet = widget, layout = "scroll")   
+
         logging.info("Set has been opened")
-    
+       
     # function to save set into json file
     def save_created_set(self, fileName = None):
         self.data = {"sets": []}
@@ -240,12 +311,21 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
         name = event.mimeData().getSomeText()
         objList = event.mimeData().getSomeSetList()
         parentLayout = event.mimeData().getSomeLayout()
-        palette = event.mimeData().getSomeColor() 
-        print(palette )
+        palette = event.mimeData().getSomeColor()
+        eye = event.mimeData().getSomeEye()
+        switch = event.mimeData().getSomeSwitch() 
         widget = ns.CustomSet(labelName = name, color = palette)
     
         widget.stored_selection = objList
         widget.deleteScrollPressed.connect(self.delete_selected_widget)
+        widget.visButton.setIcon(eye)
+
+        if switch == 2:
+            widget.visButton.setChecked(True)
+            widget.vis_Switch_parameter_2 = 2
+
+        if switch == 1:
+            widget.vis_Switch_parameter_2 = 1      
 
         # functions #
         self.addObjects(widget = widget, labelName = name, layout = parentLayout)
@@ -274,7 +354,9 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
                     widget.deleteLater()
                     
                     if hasattr(pw, "DropSize"):
-                        pw.setFixedHeight(height - 45)           
+                        pw.setFixedHeight(height - 45)
+                        self.repaint()
+                        self.update()           
     
 # deleting GUI interface before opening new
 def deleteGUI(control):

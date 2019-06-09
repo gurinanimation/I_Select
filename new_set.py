@@ -37,7 +37,19 @@ class MyMIME(QtCore.QMimeData):
         self.someColor = color
 
     def getSomeColor(self):
-        return self.someColor        
+        return self.someColor 
+
+    def setSomeEye(self, eye = None):
+        self.someEye = eye
+
+    def getSomeEye(self):
+        return self.someEye
+
+    def setSomeSwitch(self, switch = None):
+        self.someSwitch = switch
+
+    def getSomeSwitch(self):
+        return self.someSwitch             
 
 
 class Label(QtWidgets.QWidget):
@@ -80,8 +92,7 @@ class Label(QtWidgets.QWidget):
     
     def setLabel_visibility(self):          # function to change setLabel visibility
         self.setLabel.show()     
-        self.changeLabel.hide()
-        print(self.internalName)       
+        self.changeLabel.hide()       
         self.emitChangeLabel.emit(str(self.internalName)) 
     
     def changeFocus(self):                  # change focus function to remove focus from changeLabel line edit
@@ -146,7 +157,7 @@ class CustomSet(QtWidgets.QWidget):
         self.eyeicon_1 = QtGui.QIcon(os.path.join(ROOT, "icons", "vis.svg"))
         self.eyeicon_2 = QtGui.QIcon(os.path.join(ROOT, "icons", "invis.svg"))
         self.visButton.setIcon(self.eyeicon_1)
-        
+        self.vis_Switch_parameter_2 = 1
         
         self.visButton.setStyleSheet("QPushButton:checked{background-color: transparent; color: black; border: black 2px; }"
                                     "QPushButton:pressed{background-color: transparent; color: black; border: black 2px; }")                      
@@ -174,6 +185,13 @@ class CustomSet(QtWidgets.QWidget):
         self.selButton.setMaximumWidth(50)
         self.selButton.clicked.connect(self.selection_function)
 
+        ### background Color
+        self.background_color = 70                     
+        self.setAutoFillBackground(True)
+        self.pal = self.palette()
+        self.pal.setColor(self.backgroundRole(), QtGui.QColor(self.background_color,self.background_color,self.background_color))
+        self.setPalette(self.pal)
+
         #### list for keeping objects in set ####
         self.stored_selection = []
         self.stored_palette = None
@@ -181,7 +199,6 @@ class CustomSet(QtWidgets.QWidget):
     @QtCore.Slot(str)
     def changeLabelName(self, text):
         self.labelName = text
-        print("New label name is: " + self.labelName)
 
     @QtCore.Slot(list)
     def pallete_change(self, palette = None):
@@ -193,6 +210,7 @@ class CustomSet(QtWidgets.QWidget):
         self.shapes = []
         if self.visButton.isChecked():
             self.visButton.setIcon(self.eyeicon_2)
+            self.vis_Switch_parameter_2 = 2
             for i in self.stored_selection:
                 cmds.select(i)
                 self.shapes.extend(cmds.listRelatives(c = True, s = True))
@@ -200,6 +218,7 @@ class CustomSet(QtWidgets.QWidget):
                     cmds.setAttr("%s.visibility" % i, 0)       
         else:
             self.visButton.setIcon(self.eyeicon_1)
+            self.vis_Switch_parameter_2 = 1
             for i in self.stored_selection:
                 cmds.select(i)
                 self.shapes.extend(cmds.listRelatives(c = True, s = True))
@@ -287,6 +306,8 @@ class CustomSet(QtWidgets.QWidget):
         mimeData.setSomeSetList(setList = self.stored_selection)
         mimeData.setSomeLayout(layout = layout)
         mimeData.setSomeColor(color = self.saveColorJson)
+        mimeData.setSomeEye(eye = self.visButton.icon())
+        mimeData.setSomeSwitch(switch = self.vis_Switch_parameter_2)
         
         # below makes the pixmap half transparent
         pixmap = QtGui.QPixmap.grabWidget(self)

@@ -13,13 +13,14 @@ import new_set as ns
 ROOT  = str(os.path.dirname(__file__))
 
 class DropGroup(QtWidgets.QWidget):
-    def __init__(self, DropSize = 45, label = None):
+    def __init__(self, DropSize = 30, label = None):
         super(DropGroup,self).__init__()
         self.DropSize = DropSize
         ###########################
         self.setFixedHeight(self.DropSize)
         self.setObjectName("Drop_group_obj")
         self.drop_layout = QtWidgets.QVBoxLayout()
+        self.drop_layout.setContentsMargins(5,2,2,0)
         self.setLayout(self.drop_layout) 
         
         self.bgcolor = 85
@@ -56,7 +57,9 @@ class DropGroup(QtWidgets.QWidget):
                     widget.deleteLater()
                     
                     if hasattr(pw, "DropSize"):
-                        pw.setFixedHeight(height - 45)   
+                        pw.setFixedHeight(height - 45)
+                        self.repaint()
+                        self.update()   
             
     def dragEnterEvent(self, event):
         event.acceptProposedAction()
@@ -65,12 +68,23 @@ class DropGroup(QtWidgets.QWidget):
         name = event.mimeData().getSomeText()
         objList = event.mimeData().getSomeSetList()
         parentLayout = event.mimeData().getSomeLayout()
-        palette = event.mimeData().getSomeColor() 
+        palette = event.mimeData().getSomeColor()
+        eye = event.mimeData().getSomeEye()
+        switch = event.mimeData().getSomeSwitch() 
         widget = ns.CustomSet(labelName = name, color = palette)
     
         widget.stored_selection = objList
         widget.deleteScrollPressed.connect(self.delete_selected_widget)
+        widget.visButton.setIcon(eye)
+        
+        if switch == 2:
+            widget.visButton.setChecked(True)
+            widget.vis_Switch_parameter_2 = 2
 
+        if switch == 1:
+            widget.vis_Switch_parameter_2 = 1  
+              
+        
         # functions #
         self.addObjects(widget = widget, labelName = name, layout = parentLayout)
         
@@ -89,6 +103,8 @@ class DropGroup(QtWidgets.QWidget):
                 if itemWidget.labelName == labelName:
                     itemWidget.deleteLater()
                     self.setFixedHeight(self.height() - 45)
+                    self.repaint()
+                    self.update()
 
                      
 class Label(QtWidgets.QWidget):

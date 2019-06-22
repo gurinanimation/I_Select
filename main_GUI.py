@@ -1,3 +1,7 @@
+# Quick selection sets for Maya with drag and drop function.
+# Made by Ihor Hurin  gurin.animation@gmail.com
+
+import sys
 from Qt import QtWidgets, QtCore, QtGui
 import maya.cmds as cmds
 import os
@@ -26,7 +30,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
         self.set_label_name = "Set_"                # variable - new set prefix
                 
         ###########################################################################
-        self.setMinimumSize(320, 400)                # Widget size
+        self.setMinimumSize(320, 350)                # Widget size
         self.setObjectName('GUI_object')             # widget's object name
         self.setWindowTitle("I Select")              # main window title
         self.setDockableParameters(width = 320)      # dockable width
@@ -122,19 +126,21 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
     
     # function to add new sets to scroll_layout
     def new_set_button_clicked(self):                      
-        logging.info("New Selection Set has been created")        
+                
         self.counter += 1
         NewSet = ns.CustomSet(labelName = self.set_label_name + str(self.counter))
         self.scroll_layout.addWidget(NewSet)
         NewSet.deleteScrollPressed.connect(self.delete_selected_widget)
+        sys.stdout.write("New set has been created")
 
     # function to add new groups to scroll_layout
     def new_group_button_clicked(self):
-        logging.info("New Group has been created")
+        
         self.counter += 1
         Group = ng.NewGroup(labelName = self.group_label_name + str(self.counter))                                  
         self.scroll_layout.addWidget(Group)
         Group.deletePressed.connect(self.delete_selected_widget)
+        sys.stdout.write("New group has been created")
           
     # function to delete groups/sets from scroll_layout
     def delete_selected_widget(self, labelName = None ):
@@ -228,7 +234,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
                 
                 runSet = self.add_set_from_json(selSet = widget, layout = "scroll")   
 
-        logging.info("Set has been opened")
+        sys.stdout.write("Set has been opened")
        
     # function to save set into json file
     def save_created_set(self, fileName = None):
@@ -298,7 +304,7 @@ class I_Select_GUI(MayaQWidgetDockableMixin, QtWidgets.QDockWidget):
         json.dump(self.data, fileOut, indent = 2)
         fileOut.close()         
 
-        logging.info("Your set has been saved")
+        sys.stdout.write("Your set has been saved")
         
     
     
@@ -365,11 +371,11 @@ def deleteGUI(control):
         cmds.workspaceControl(control, e = True, close = True)
 
         cmds.deleteUI(control, control = True) 
-        logging.info("I Select has been deleted and reopened")       
+        sys.stdout.write("I Select has been deleted and reopened")       
 
     else:
 
-        logging.info("I select has been opened")
+        sys.stdout.write("I select has been opened")
 
 # running gui function
 def runGUI():

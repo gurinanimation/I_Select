@@ -248,10 +248,8 @@ class CustomSet(QtWidgets.QWidget):
         if len(self.stored_selection):
             cmds.select(self.stored_selection)
         else:
-            print ("Nothing to select")
-            logging.info("Nothing to select")
-
-        print(self.stored_selection) 
+            cmds.warning ("Nothing to select")
+             
     ### function to delete selected object from set ###
     def delete_objects_from_set(self):
         self.del_selection = cmds.ls(sl = True, tr = True, l = True)
